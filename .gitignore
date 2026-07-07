@@ -29,3 +29,6 @@ test/e2e/videos/
 
 # ignore Snyk Code scanner files
 .dccache
+
+# ignore private keys
+artifacts/cert/*.key
