@@ -36,6 +36,27 @@
   "comments": {
     "//": "a9 insecure components"
   },
+  "overrides": {
+    "handlebars": "$handlebars",
+    "babel-traverse": "^7.23.2",
+    "@babel/traverse": "^7.23.2",
+    "json-schema": "^0.4.0",
+    "getobject": "^1.1.1",
+    "underscore": "$underscore",
+    "form-data": "$form-data",
+    "lodash": "$lodash",
+    "growl": "$growl",
+    "minimist": "$minimist",
+    "fsevents": "^1.2.11",
+    "bson": "$bson",
+    "set-value": "$set-value",
+    "hoek": "^4.2.1",
+    "uglify-js": "^2.8.29",
+    "dot-prop": "^4.2.1",
+    "async": "$async",
+    "sshpk": "$sshpk",
+    "cross-spawn": "^7.0.3"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "cross-env PORT=5000 nodemon",
@@ -50,7 +71,7 @@
     "cy:verify": "cypress verify"
   },
   "devDependencies": {
-    "async": "^2.0.0-rc.4",
+    "async": "^2.6.4",
     "cross-env": "^7.0.2",
     "cypress": "^3.3.1",
     "grunt": "^1.0.3",
