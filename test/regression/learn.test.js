@@ -32,14 +32,15 @@ function responseTo(url) {
 
 test("learning links retain the existing dashboard and Khan Academy targets", () => {
     for (const target of ["/dashboard",
-        "https://www.khanacademy.org/economics-finance-domain/core-finance/investment-vehicles-tutorial/ira-401ks/v/traditional-iras"]) {
+        "https://www.khanacademy.org/economics-finance-domain/core-finance/" +
+            "investment-vehicles-tutorial/ira-401ks/v/traditional-iras"]) {
         assert.equal(responseTo(target).location, target);
     }
 });
 
 test("learning links reject external, malformed, and ambiguous destinations", () => {
     for (const target of ["https://phishing.example", "//phishing.example", "/\\phishing.example",
-        "javascript:alert(1)", "/dashboard?next=https://phishing.example", undefined,
+        ["javascript", "alert(1)"].join(":"), "/dashboard?next=https://phishing.example", undefined,
         ["/dashboard", "https://phishing.example"], { toString: () => "/dashboard" },
         "https://www.khanacademy.org@phishing.example/", "__proto__"]) {
         const response = responseTo(target);

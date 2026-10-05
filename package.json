@@ -5,23 +5,28 @@
   "description": "A tool to learn OWASP Top 10 for node.js developers",
   "main": "server.js",
   "dependencies": {
-    "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.20.6",
-    "consolidate": "^0.14.1",
     "express": "^4.22.1",
     "express-session": "^1.19.0",
-    "marked": "0.3.5",
-    "mongodb": "^2.1.18",
-    "needle": "2.2.4",
-    "node-esapi": "0.0.1",
+    "mongodb": "^7.7.0",
     "serve-favicon": "^2.3.0",
-    "swig": "^1.4.2"
+    "nunjucks": "^3.2.4",
+    "markdown-it": "^15.0.2"
   },
   "overrides": {
     "qs": "^6.16.0",
     "express": {
       "path-to-regexp": "^0.1.13"
-    }
+    },
+    "lodash@>=4 <5": "^4.18.1",
+    "async@>=2 <3": "^2.6.4",
+    "minimist@>=0 <1": "^0.2.4",
+    "minimist@>=1 <2": "^1.2.8",
+    "minimatch@>=3 <4": "^3.1.4",
+    "brace-expansion@>=1 <2": "^1.1.18",
+    "semver@>=5 <6": "^5.7.2",
+    "semver@>=6 <7": "^6.3.1",
+    "js-yaml@>=4 <5": "^4.3.1"
   },
   "scripts": {
     "start": "node server.js",
@@ -34,29 +39,29 @@
     "docker-mongo": "docker run -p 27017:27017 --name mongo  mongo:latest",
     "start-infra": "docker-compose up",
     "stop-infra": "docker-compose down",
-    "cy:verify": "cypress verify"
+    "cy:verify": "cypress verify",
+    "retire": "grunt retire",
+    "test:security": "cross-env NODE_ENV=test grunt testsecurity"
   },
   "devDependencies": {
     "async": "^2.6.4",
     "cross-env": "^7.0.2",
     "cypress": "^3.3.1",
-    "grunt": "^1.0.3",
-    "grunt-cli": "^1.2.0",
-    "grunt-concurrent": "^2.3.0",
-    "grunt-contrib-jshint": "^3.0.0",
-    "grunt-contrib-watch": "^1.0.0",
+    "grunt": "^1.6.1",
+    "grunt-cli": "^1.5.0",
+    "grunt-concurrent": "^3.0.0",
+    "grunt-contrib-jshint": "^3.2.0",
+    "grunt-contrib-watch": "^1.1.0",
     "grunt-env": "latest",
-    "grunt-if": "https://github.com/binarymist/grunt-if/tarball/master",
     "grunt-jsbeautifier": "^0.2.12",
-    "grunt-mocha-test": "^0.12.7",
-    "grunt-npm-install": "^0.3.0",
-    "grunt-retire": "^0.3.12",
-    "jshint": "2.12.0",
-    "mocha": "^2.4.5",
-    "nodemon": "^1.19.1",
+    "jshint": "^2.13.6",
+    "mocha": "^11.0.0",
+    "nodemon": "^3.1.10",
     "selenium-webdriver": "^2.53.2",
     "should": "^8.3.1",
-    "zaproxy": "^0.2.0"
+    "zaproxy": "^0.2.0",
+    "grunt-nodemon": "^0.4.2",
+    "retire": "^5.7.0"
   },
   "repository": "https://github.com/OWASP/NodejsGoat",
   "license": "Apache 2.0",

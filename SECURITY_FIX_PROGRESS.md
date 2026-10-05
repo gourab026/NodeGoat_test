@@ -43,14 +43,56 @@ are skipped because the old Cypress installation downloads an obsolete binary;
 these runtime dependencies do not require install scripts. Browser suites need
 their tools installed separately until their migration is completed.
 
+## Second scan and batch (uncommitted)
+
+The first batch was installed, tested (6/6), and pushed by the repository owner
+as `023b2d4401d6926eb3d7304f69f3511b93c60627`.
+Scan `fc18c671-00d1-4774-8aee-b729eb58d713` reports 5/100, grade F:
+18 critical, 85 high, 55 medium, 6 low. All 164 findings were read.
+Removing incompatible dependency overrides exposed additional vulnerable copies;
+this score does not establish an improvement. Current configuration, redirect,
+and Docker findings from the baseline are absent. Three historical secret
+findings remain, and the other 161 findings concern dependencies.
+
+- Migrate the MongoDB driver to 7.7 and its promise APIs, including startup,
+  connection shutdown, counters, CRUD, and database seeding. The driver supports
+  the existing MongoDB 4.4 development server. Updates use `$set` and numeric
+  user IDs consistently, preserve unrelated fields, and propagate failures.
+  Stock thresholds use a validated numeric query instead of server-side `$where`.
+- Replace Swig/consolidate with Nunjucks and adapt all application and tutorial
+  templates. Autoescaping protects user fields; only server-owned script markup
+  is marked safe. Replace Marked with markdown-it, configured without raw HTML
+  or automatic links; the parser rejects unsafe link protocols while preserving
+  formatted memos. These packages still need installation and rendering tests.
+- Replace obsolete bcrypt-nodejs with Node's scrypt for new users and seeded
+  demo accounts, using independent random salts. Existing plaintext passwords
+  are migrated after successful login so existing accounts remain usable.
+  Unused accounts retain their old stored password until login; seeding replaces
+  the entire demo database and is not a migration for a real deployment.
+- Enforce allocation ownership and administrator access to benefits. Renew and
+  save authenticated sessions, and await signup provisioning before reporting
+  success. Validate scalar query inputs and bound the profile routing-number
+  regex to avoid its nested-quantifier denial of service.
+- Stock research redirects a validated symbol to a fixed HTTPS Yahoo Finance
+  URL. It no longer fetches caller-selected URLs or serves third-party HTML
+  under the application's origin. Stock research remains accessible externally.
+- Replace grunt-npm-install and grunt-if task orchestration with direct child
+  processes; remove their obsolete bundled npm/nodeunit dependency trees. Update
+  Grunt, linting, Mocha, and task parents. Preserve dependency/browser audits with
+  `grunt retire` using npm audit and the maintained Retire CLI. Security tests
+  retain Mocha/ZAP, require an installed chromedriver, and report child failures.
+  Remove Grunt's force option so failed tasks fail the command.
+- Add regression coverage for database operations, password migration, seeding,
+  permissions, session renewal, SSRF, rendering, Markdown, and task failures.
+  No scanner suppression was introduced. The lockfile remains intact; installation
+  must regenerate it before the next commit and scan.
+
 ## Outstanding findings and next batches
 
 | Area | Evidence and next action |
 | --- | --- |
-| MongoDB | Driver 2.2.36 is vulnerable. Upgrade the driver and migrate connection, CRUD, callbacks, and seeding together. |
-| Templates | Swig 1.4.2 has no fixed release for the reported issue. Replace the engine, adapt templates, and validate escaping and rendering. |
-| Markdown | Marked 0.3.5 is vulnerable. Upgrade it and use an explicit HTML sanitizer; preserve memo formatting. |
-| Developer tooling | `grunt-npm-install` brings npm 3 and tar 2; `grunt-retire`, old Cypress, and ZAP bring request; Selenium 2 brings adm-zip. Upgrade or replace these parents while preserving their tasks and tests. |
+| Runtime migrations | MongoDB, Nunjucks, and Markdown replacements are prepared in this batch; validate installed packages, rendering, and a real database before considering them complete. |
+| Developer tooling | Cypress 3 and ZAP still bring request; Selenium 2 brings adm-zip. Upgrade these parents and adapt their configurations/APIs in a subsequent batch. Other obsolete Grunt dependency trees are addressed in the prepared batch. |
 | Remaining transitive packages | Reassess the installed dependency tree after regeneration. The full scan includes repeated advisories for different copies of packages; a newer direct dependency alone does not patch the nested copies. |
 | Docker health | The finding is addressed in the Dockerfile; build and runtime verification still require Docker and regenerated dependencies. |
 | Historical secrets | ZAP credentials and `artifacts/cert/server.key` were detected in initial commit `f29107fa38e4af15253d7721514c5fa3fdf23afd`. The private key is already absent at HEAD. Changing code cannot erase git history or revoke credentials. Replace any deployments using those credentials/key and its associated certificate. No history rewrite or scanner suppression was performed. |
@@ -65,10 +107,24 @@ The redirect and configuration tests failed against the baseline and passed
 after the changes. Six tests pass with `npm test` in the offline workspace.
 JavaScript syntax and JSON checks also pass. Tests load the real configuration
 and route registration in isolated VM contexts; unrelated handlers are stubbed
-because app dependencies are unavailable. Dependency installation, database
-startup, Docker, and full browser integration have not been validated here.
+because app dependencies are unavailable.
+
+For the second batch, all 30 tests that can run with installed dependencies pass.
+The full `npm test` runs 34 tests: 30 pass and the four application rendering tests
+fail because the new Nunjucks dependency is not installed. These four tests load
+the real application and render templates; they must pass after installation.
+JavaScript lint and whitespace checks pass for the modified code. Database
+startup against the real MongoDB driver/server, Docker, and full browser
+integration have not been validated here. Dependency installation is delegated
+to the owner because the workspace cannot reach the registry.
 
 Patched middleware versions were checked against upstream histories:
 [Express](https://raw.githubusercontent.com/expressjs/express/4.x/History.md),
 [body-parser](https://raw.githubusercontent.com/expressjs/body-parser/master/HISTORY.md),
 and [express-session](https://raw.githubusercontent.com/expressjs/session/master/HISTORY.md).
+Migration APIs and versions were checked against upstream documentation:
+[MongoDB compatibility](https://www.mongodb.com/docs/drivers/node/current/reference/compatibility/),
+[MongoDB driver](https://github.com/mongodb/node-mongodb-native),
+[Nunjucks](https://mozilla.github.io/nunjucks/api.html),
+[markdown-it](https://github.com/markdown-it/markdown-it), and
+[Retire.js](https://github.com/RetireJS/retire.js).

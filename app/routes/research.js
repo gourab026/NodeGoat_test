@@ -1,38 +1,18 @@
-const ResearchDAO = require("../data/research-dao").ResearchDAO;
-const needle = require("needle");
-const {
-    environmentalScripts
-} = require("../../config/config");
+"use strict";
 
-function ResearchHandler(db) {
-    "use strict";
+const { environmentalScripts } = require("../../config/config");
 
-    const researchDAO = new ResearchDAO(db);
-
+function ResearchHandler() {
     this.displayResearch = (req, res) => {
-
-        if (req.query.symbol) {
-            const url = req.query.url + req.query.symbol;
-            return needle.get(url, (error, newResponse, body) => {
-                if (!error && newResponse.statusCode === 200) {
-                    res.writeHead(200, {
-                        "Content-Type": "text/html"
-                    });
-                }
-                res.write("<h1>The following is the stock information you requested.</h1>\n\n");
-                res.write("\n\n");
-                if (body) {
-                    res.write(body);
-                }
-                return res.end();
-            });
+        const { symbol } = req.query;
+        if (symbol === undefined || symbol === "") return res.render("research", { environmentalScripts });
+        if (typeof symbol !== "string" || !/^\^?[A-Za-z0-9][A-Za-z0-9.-]{0,19}$/.test(symbol)) {
+            return res.status(400).send("Invalid stock symbol");
         }
-
-        return res.render("research", {
-            environmentalScripts
-        });
+        // Stock data is viewed on the provider's site. Never fetch a URL supplied
+        // by the caller, and never serve remote HTML under this app's origin.
+        return res.redirect("https://finance.yahoo.com/quote/" + encodeURIComponent(symbol));
     };
-
 }
 
 module.exports = ResearchHandler;
