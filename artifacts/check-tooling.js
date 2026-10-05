@@ -7,6 +7,9 @@ const { defineConfig } = require("cypress");
 const { Builder } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 const proxy = require("selenium-webdriver/proxy");
+const { patchBraces } = require("./patch-braces");
+
+assert.equal(patchBraces(undefined, false), 0, "Run npm run patch:dependencies before checking installed tooling");
 
 const config = defineConfig(require("../cypress.config"));
 assert.equal(config.e2e.specPattern, "test/e2e/integration/**/*_spec.js");

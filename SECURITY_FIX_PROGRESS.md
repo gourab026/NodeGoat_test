@@ -174,6 +174,66 @@ Versions and migrations checked against primary sources:
 [ZAP API](https://www.zaproxy.org/docs/api/), and
 [basic-ftp changelog](https://github.com/patrickjuchli/basic-ftp/blob/master/CHANGELOG.md).
 
+## Fourth scan and batch (uncommitted)
+
+The owner installed and validated the third batch (38/38 tests and tooling check),
+then committed and pushed `6c07464ab7164c2facdb1ef87111e7f958df2ffa` on
+`codex/mcp-fix-loop`. Sentrint scan `845f3a78-eb67-47a9-a2f3-be7da3468abe`
+reports **C, 53/100**, with five findings. All five were read; pagination is complete.
+Three are the previously documented historical secrets, which remain unchanged.
+The two dependency findings are:
+
+- Low: CVE-2017-16137, debug 3.2.6, via @cypress/xvfb and tiny-lr. Require
+  debug 3.2.7 for 3.x copies only; debug 2.6.9 and 4.x retain their existing APIs.
+  This same-major patch still requires installation and lockfile regeneration.
+- High: CVE-2026-93687, braces 3.0.3, used by chokidar and micromatch through
+  Nunjucks, Nodemon, and Grunt. Upstream and the advisory list no fixed release.
+  No fake version, package rename, suppression, or incompatible alias is used.
+
+For braces, add a reproducible local source repair in `artifacts/patch-braces.js`.
+It bounds parser nesting and recursive compile, expand, and stringify AST walkers
+to 128 levels. Excessive nesting produces a controlled SyntaxError before call
+stack exhaustion. This deliberately rejects unusually deep patterns; ordinary
+glob lists, ranges, nested patterns, and micromatch behavior are tested.
+The repair verifies SHA-256 hashes of the exact original 3.0.3 source, verifies
+all installed copies before writing, supports repeated execution, and fails on
+unknown versions or changed source. Tests confirm rejection of a string pattern
+with 4,000 levels (below the original length limit), direct deeply nested ASTs,
+normal behavior, repeatability, and refusal of unexpected source.
+
+Normal npm installs apply the repair through postinstall. The Docker dependency
+stage copies the repair script before npm ci so production dependencies receive
+the same fix. Installs using `--ignore-scripts` must explicitly run
+`npm run patch:dependencies`, including CI jobs using that option. The tooling
+check verifies the repair without modifying installed files. Review and retire
+the local patch once an actual upstream fixed version is available; currently
+any different braces version fails closed and requires review.
+
+The installed package remains braces 3.0.3 with its original package metadata
+and lockfile integrity. Consequently its version-based Sentrint finding is
+expected to remain visible even after the runtime repair. This is a locally
+patched dependency, not an upstream fixed release. A higher post-batch score is
+not claimed. Git history and the existing lockfile are preserved.
+
+Validation: 42/42 regression tests pass, as does the tooling smoke check with
+the currently installed dependencies. Lint and whitespace checks pass. Docker
+build and actual browser/ZAP runs remain unverified here. The proposed debug
+patch has not been installed in this offline workspace.
+
+Run before committing this batch:
+
+```sh
+npm install --ignore-scripts
+npm run patch:dependencies
+npm test
+npm run check:tooling
+```
+
+Primary evidence:
+[debug advisory and fixed versions](https://github.com/advisories/GHSA-gxpj-cx7g-858c),
+[braces advisory with no fixed version](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm),
+and [upstream braces manifest](https://github.com/micromatch/braces/blob/master/package.json).
+
 ## Validation
 
 The redirect and configuration tests failed against the baseline and passed

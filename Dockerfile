@@ -1,6 +1,7 @@
 FROM node:24-alpine AS dependencies
 WORKDIR /usr/src/app
 COPY package*.json ./
+COPY artifacts/patch-braces.js ./artifacts/patch-braces.js
 RUN npm ci --omit=dev
 
 FROM node:24-alpine

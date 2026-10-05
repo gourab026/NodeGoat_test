@@ -29,11 +29,14 @@
     "js-yaml@>=4 <5": "^4.3.1",
     "ini@>=1 <2": "^1.3.8",
     "tmp@>=0.2 <0.3": "^0.2.7",
+    "debug@>=3 <4": "^3.2.7",
     "get-uri": {
       "basic-ftp": "^6.2.2"
     }
   },
   "scripts": {
+    "postinstall": "node artifacts/patch-braces.js",
+    "patch:dependencies": "node artifacts/patch-braces.js",
     "start": "node server.js",
     "dev": "cross-env PORT=5000 nodemon",
     "test:e2e": "cross-env NODE_ENV=test cypress open",
