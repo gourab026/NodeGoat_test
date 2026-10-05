@@ -1,86 +1,30 @@
-const UserDAO = require("./user-dao").UserDAO;
+"use strict";
 
-/* The ContributionsDAO must be constructed with a connected database object */
+const { callbackify } = require("node:util");
+const { userId } = require("./validation");
+
 function ContributionsDAO(db) {
-    "use strict";
-
-    /* If this constructor is called without the "new" operator, "this" points
-     * to the global object. Log a warning and call it correctly. */
-    if (false === (this instanceof ContributionsDAO)) {
-        console.log("Warning: ContributionsDAO constructor called without 'new' operator");
-        return new ContributionsDAO(db);
-    }
-
-    const contributionsDB = db.collection("contributions");
-    const userDAO = new UserDAO(db);
-
-    this.update = (userId, preTax, afterTax, roth, callback) => {
-        const parsedUserId = parseInt(userId);
-
-        // Create contributions document
-        const contributions = {
-            userId: parsedUserId,
-            preTax: preTax,
-            afterTax: afterTax,
-            roth: roth
-        };
-
-        contributionsDB.update({
-            userId
-            },
-            contributions, {
-                upsert: true
-            },
-            err => {
-                if (!err) {
-                    console.log("Updated contributions");
-                    // add user details
-                    userDAO.getUserById(parsedUserId, (err, user) => {
-
-                        if (err) return callback(err, null);
-
-                        contributions.userName = user.userName;
-                        contributions.firstName = user.firstName;
-                        contributions.lastName = user.lastName;
-                        contributions.userId = userId;
-
-                        return callback(null, contributions);
-                    });
-                } else {
-                    return callback(err, null);
-                }
-            }
-        );
+    if (!(this instanceof ContributionsDAO)) return new ContributionsDAO(db);
+    const contributions = db.collection("contributions");
+    const withUser = async document => {
+        const user = await db.collection("users").findOne({ _id: document.userId });
+        if (!user) throw new Error("User not found");
+        return { ...document, userName: user.userName, firstName: user.firstName, lastName: user.lastName };
     };
-
-    this.getByUserId = (userId, callback) => {
-        contributionsDB.findOne({
-                userId: userId
-            },
-            (err, contributions) => {
-                if (err) return callback(err, null);
-
-                // Set defualt contributions if not set
-                contributions = contributions || {
-                    preTax: 2,
-                    afterTax: 2,
-                    roth: 2
-                };
-
-                // add user details
-                userDAO.getUserById(userId, (err, user) => {
-
-                    if (err) return callback(err, null);
-                    contributions.userName = user.userName;
-                    contributions.firstName = user.firstName;
-                    contributions.lastName = user.lastName;
-                    contributions.userId = userId;
-
-                    callback(null, contributions);
-                });
-            }
-        );
-    };
+    this.update = callbackify(async (value, preTax, afterTax, roth) => {
+        if ([preTax, afterTax, roth].some(amount => !Number.isInteger(amount) || amount < 0) ||
+            preTax + afterTax + roth > 30) {
+            throw new Error("Invalid contribution percentages");
+        }
+        const document = { userId: userId(value), preTax, afterTax, roth };
+        await contributions.updateOne({ userId: document.userId }, { $set: document }, { upsert: true });
+        return withUser(document);
+    });
+    this.getByUserId = callbackify(async value => {
+        const id = userId(value);
+        const document = await contributions.findOne({ userId: id }) || { userId: id, preTax: 2, afterTax: 2, roth: 2 };
+        return withUser(document);
+    });
 }
 
-module.exports = { ContributionsDAO };
+module.exports = { ContributionsDAO };

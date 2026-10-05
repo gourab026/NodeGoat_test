@@ -28,8 +28,8 @@
 
   Cypress.Commands.add("dbReset", () => {
     cy.exec("npm run db:seed", {
-      timeout: 6000,
-      failOnNonZeroExit: false
+      timeout: 30000,
+      failOnNonZeroExit: true
     });
   });
 

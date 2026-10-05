@@ -15,6 +15,7 @@ describe("/learn behaviour", () => {
   it("Should be accesible for a logged user", () => {
     cy.userSignIn();
     cy.visitPage("/learn?url=/dashboard");
+    cy.get("#learning-resource").should("have.attr", "href", "/dashboard").click();
     cy.url().should("include", "dashboard");
   });
 });

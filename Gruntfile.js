@@ -1,9 +1,10 @@
 "use strict";
 
-var exec = require("child_process").exec;
+const { spawn } = require("node:child_process");
+const path = require("node:path");
 
 var APP_JS_FILES = ["app/assets/js/**/*.js", "config/**/*.js", "app/data/**/*.js",
-    "app/routes/**/*.js", "server.js"
+    "app/routes/**/*.js", "app/security/**/*.js", "app/application.js", "server.js"
 ];
 
 var SUPPORT_JS_FILES = ["Gruntfile.js", "artifacts/**/*.js", "test/**/*.js"];
@@ -90,101 +91,80 @@ module.exports = function(grunt) {
                 logConcurrentOutput: true
             }
         },
-        if: {
-            testSecurityDependenciesInstalled: {
-                options: {
-                    test: function() {
-                        console.log("Checking to see if chromedriver is installed.");
-                        try {
-                            return require.resolve("chromedriver");
-                        } catch (e) {
-                            console.log(e);
-                            console.log("We will now try to install it.");
-                            console.log("If this fails, please try installing manually,");
-                            console.log("there may be some help here:");
-                            console.log("https://github.com/vuejs/vue-router/issues/261#issuecomment-218618180");
-                            throw e;
-                        }
-                    }
-                },
-                ifTrue: ["mochaTest:security"],
-                ifFalse: ["npm-install:chromedriver@^2.21.2", "mochaTest:security"]
-            }
-        },
-        mochaTest: {
-            options: {
-                reporter: "spec"
-            },
-            unit: {
-                src: ["test/unit/*.js"],
-            },
-            security: {
-                src: ["test/security/*.js"]
-            }
-        },
         env: {
             test: {
                 NODE_ENV: "test"
             }
         },
-        retire: {
-            js: [],
-            node: ["./"],
-            options: {
-                verbose: true,
-                packageOnly: true,
-                jsRepository: "https://raw.github.com/bekk/retire.js/master/repository/jsrepository.json",
-                nodeRepository: "https://raw.github.com/bekk/retire.js/master/repository/npmrepository.json",
-            }
-        }
+
 
     });
 
     // Load NPM tasks
     grunt.loadNpmTasks("grunt-contrib-watch");
     grunt.loadNpmTasks("grunt-contrib-jshint");
-    grunt.loadNpmTasks("grunt-mocha-test");
-    grunt.loadNpmTasks("grunt-nodemon");
     grunt.loadNpmTasks("grunt-concurrent");
     grunt.loadNpmTasks("grunt-env");
     grunt.loadNpmTasks("grunt-jsbeautifier");
-    grunt.loadNpmTasks("grunt-retire"); // run as: grunt retire
-    grunt.loadNpmTasks("grunt-if");
-    grunt.loadNpmTasks("grunt-npm-install");
 
-    // Making grunt default to force in order not to break the project.
-    grunt.option("force", true);
+
+    function runChild(command, args, done, options = {}) {
+        const child = spawn(command, args, { stdio: "inherit", ...options });
+        let finished = false;
+        function finish(success) {
+            if (finished) return;
+            finished = true;
+            done(success);
+        }
+        child.once("error", error => {
+            grunt.log.error(error.message);
+            finish(false);
+        });
+        child.once("close", code => finish(code === 0));
+    }
 
     grunt.registerTask("db-reset", "(Re)init the database.", function(arg) {
-        var finalEnv = process.env.NODE_ENV || arg || "development";
-        var done;
-
-        done = this.async();
-        var cmd = process.platform === "win32" ? "NODE_ENV=" + finalEnv + " & " : "NODE_ENV=" + finalEnv + " ";
-
-        exec(
-            cmd + "node artifacts/db-reset.js",
-            function(err, stdout, stderr) {
-                if (err) {
-                    grunt.log.error("db-reset:");
-                    grunt.log.error(err);
-                    grunt.log.error(stderr);
-                } else {
-                    grunt.log.ok(stdout);
-                }
-                done();
-            }
-        );
+        const finalEnv = process.env.NODE_ENV || arg || "development";
+        const done = this.async();
+        if (!["development", "test", "production"].includes(finalEnv)) {
+            grunt.log.error("Unknown database environment");
+            return done(false);
+        }
+        runChild(process.execPath, [path.join(__dirname, "artifacts/db-reset.js")], done,
+            { env: { ...process.env, NODE_ENV: finalEnv } });
     });
+
+    grunt.registerTask("run-unit-tests", function() {
+        runChild(process.execPath, ["--test", "--test-isolation=none", "test/regression/*.test.js"], this.async());
+    });
+
+    grunt.registerTask("nodemon", function() {
+        runChild(process.execPath, [require.resolve("nodemon/bin/nodemon.js")], this.async());
+    });
+
+    grunt.registerTask("run-security-tests", function() {
+        runChild(process.execPath, ["--test", "test/security/*.js"], this.async());
+    });
+
+    grunt.registerTask("audit-dependencies", function() {
+        runChild(process.platform === "win32" ? "npm.cmd" : "npm", ["audit"], this.async());
+    });
+
+    grunt.registerTask("audit-assets", function() {
+        runChild(process.execPath, [require.resolve("retire/lib/cli.js"), "--path", "app/assets"], this.async());
+    });
+
+    // Retain the dependency and browser-library audit workflow with maintained tools.
+    grunt.registerTask("retire", ["audit-dependencies", "audit-assets"]);
 
     // Code Validation, beautification task(s).
     grunt.registerTask("precommit", ["jsbeautifier", "jshint"]);
 
     // Test task.
-    grunt.registerTask("test", ["env:test", "mochaTest:unit"]);
+    grunt.registerTask("test", ["env:test", "run-unit-tests"]);
 
     // Security test task.
-    grunt.registerTask("testsecurity", ["env:test", "if:testSecurityDependenciesInstalled"]);
+    grunt.registerTask("testsecurity", ["env:test", "run-security-tests"]);
 
     // start server.
     grunt.registerTask("run", ["precommit", "concurrent"]);

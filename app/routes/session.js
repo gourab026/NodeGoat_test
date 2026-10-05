@@ -11,21 +11,20 @@ function SessionHandler(db) {
     const userDAO = new UserDAO(db);
     const allocationsDAO = new AllocationsDAO(db);
 
-    const prepareUserData = (user, next) => {
+    const prepareUserData = (user, callback) => {
         // Generate random allocations
         const stocks = Math.floor((Math.random() * 40) + 1);
         const funds = Math.floor((Math.random() * 40) + 1);
         const bonds = 100 - (stocks + funds);
 
-        allocationsDAO.update(user._id, stocks, funds, bonds, (err) => {
-            if (err) return next(err);
-        });
+        allocationsDAO.update(user._id, stocks, funds, bonds, callback);
     };
 
     this.isAdminUserMiddleware = (req, res, next) => {
         if (req.session.userId) {
             return userDAO.getUserById(req.session.userId, (err, user) => {
-               return user && user.isAdmin ? next() : res.redirect("/login");
+               if (err) return next(err);
+               return user && user.isAdmin ? next() : res.status(403).send("Administrator access required");
             });
         }
         console.log("redirecting to login");
@@ -113,8 +112,14 @@ function SessionHandler(db) {
             // by wrapping the below code as a function callback for the method req.session.regenerate()
             // i.e:
             // `req.session.regenerate(() => {})`
-            req.session.userId = user._id;
-            return res.redirect(user.isAdmin ? "/benefits" : "/dashboard");
+            req.session.regenerate(error => {
+                if (error) return next(error);
+                req.session.userId = user._id;
+                req.session.save(error => {
+                    if (error) return next(error);
+                    return res.redirect(user.isAdmin ? "/benefits" : "/dashboard");
+                });
+            });
         });
     };
 
@@ -221,24 +226,17 @@ function SessionHandler(db) {
 
                     if (err) return next(err);
 
-                    //prepare data for the user
-                    prepareUserData(user, next);
-                    /*
-                    sessionDAO.startSession(user._id, (err, sessionId) => {
-                        if (err) return next(err);
-                        res.cookie("session", sessionId);
-                        req.session.userId = user._id;
-                        return res.render("dashboard", { ...user, environmentalScripts });
-                    });
-                    */
-                    req.session.regenerate(() => {
-                        req.session.userId = user._id;
-                        // Set userId property. Required for left nav menu links
-                        user.userId = user._id;
-
-                        return res.render("dashboard", {
-                            ...user,
-                            environmentalScripts
+                    prepareUserData(user, error => {
+                        if (error) return next(error);
+                        req.session.regenerate(error => {
+                            if (error) return next(error);
+                            req.session.userId = user._id;
+                            // Set userId property. Required for left nav menu links
+                            user.userId = user._id;
+                            req.session.save(error => {
+                                if (error) return next(error);
+                                return res.render("dashboard", { ...user, environmentalScripts });
+                            });
                         });
                     });
 

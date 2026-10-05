@@ -23,10 +23,10 @@ function loadConfig(env) {
 }
 
 test("production rejects a missing or short session secret", () => {
-    for (const secret of [undefined, "short"]) {
+    [undefined, "short"].forEach(secret => {
         assert.throws(() => loadConfig({ NODE_ENV: "production", SESSION_SECRET: secret }),
             /SESSION_SECRET/);
-    }
+    });
 });
 
 test("configured credentials are loaded from the environment and never logged", () => {

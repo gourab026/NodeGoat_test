@@ -8,7 +8,7 @@
 // https://on.cypress.io/plugins-guide
 // ***********************************************************
 
-const { port, hostName } = require("../../../config/env/all");
+const { port, hostName } = require("../../../config/config");
 
 // This function is called when a project is opened or re-opened (e.g. due to
 // the project's config changing)
