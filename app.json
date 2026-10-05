@@ -13,6 +13,14 @@
     "postdeploy": "node artifacts/db-reset.js"
   },
   "env": {
+    "SESSION_SECRET": {
+      "description": "Random session signing secret. Keep private and stable across restarts.",
+      "generator": "secret"
+    },
+    "TRUST_PROXY": {
+      "description": "Heroku terminates HTTPS at its reverse proxy.",
+      "value": "1"
+    },
     "MONGODB_URI": {
       "description": "Connection string for MongoDB database to use. Must be publicly accessible.",
       "value": ""

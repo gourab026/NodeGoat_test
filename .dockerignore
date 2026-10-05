@@ -4,3 +4,7 @@ docker-compose.yml
 .git
 .github
 .gitignore
+node_modules
+.env
+.env.local
+.aws

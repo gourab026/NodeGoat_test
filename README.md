@@ -27,7 +27,7 @@ The database comes pre-populated with these user accounts created as part of the
 
 ### OPTION 1 - Run NodeGoat on your machine
 
-1) Install [Node.js](http://nodejs.org/) - NodeGoat requires Node v8 or above
+1) Install [Node.js](http://nodejs.org/) - this branch requires Node.js 24 LTS (Node.js 26 is also supported)
 
 2) Clone the github repository:
    ```

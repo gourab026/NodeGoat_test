@@ -13,6 +13,10 @@ const http = require("http");
 const marked = require("marked");
 //const nosniff = require('dont-sniff-mimetype');
 const app = express(); // Web framework to handle routing requests
+app.disable("x-powered-by");
+if (process.env.TRUST_PROXY === "1") {
+    app.set("trust proxy", 1);
+}
 const routes = require("./app/routes");
 const { port, db, cookieSecret } = require("./config/config"); // Application config properties
 /*
@@ -81,8 +85,14 @@ MongoClient.connect(db, (err, db) => {
         //},
         secret: cookieSecret,
         // Both mandatory in Express v4
-        saveUninitialized: true,
-        resave: true
+        saveUninitialized: false,
+        resave: false,
+        cookie: {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 60 * 60 * 1000
+        }
         /*
         // Fix for A5 - Security MisConfig
         // Use generic cookie name
